@@ -10,7 +10,8 @@ import config
 
 app = Flask(__name__, 
     template_folder='../frontend/templates',
-    static_folder='../frontend/static'
+    static_folder='../frontend/static',
+    static_url_path='/static'
 )
 socketio = SocketIO(app)
 
