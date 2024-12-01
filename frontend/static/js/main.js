@@ -34,7 +34,45 @@ class CommuteCalculator {
     }
     
     bindEvents() {
-        this.calculateBtn.addEventListener('click', () => this.startCalculation());
+        this.calculateBtn.addEventListener('click', async () => {
+            const formData = new FormData();
+            formData.append('file', this.fileInput.files[0]);
+            formData.append('target_address', this.targetAddressInput.value);
+            
+            this.calculateBtn.disabled = true;
+            this.progressSection.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/calculate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('计算失败');
+                }
+                
+                // 获取文件blob
+                const blob = await response.blob();
+                
+                // 创建下载链接
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = response.headers.get('content-disposition')?.split('filename=')[1] || 'result.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('计算过程出错，请重试');
+            } finally {
+                this.calculateBtn.disabled = false;
+                this.progressSection.style.display = 'none';
+            }
+        });
         this.downloadBtn.addEventListener('click', () => this.downloadResult());
         
         // 添加输入验证
@@ -45,45 +83,6 @@ class CommuteCalculator {
     validateInputs() {
         const isValid = this.targetAddressInput.value && this.fileInput.files.length > 0;
         this.calculateBtn.disabled = !isValid;
-    }
-    
-    async startCalculation() {
-        try {
-            // 禁用按钮，显示进度条
-            this.calculateBtn.disabled = true;
-            this.progressSection.style.display = 'block';
-            this.resultSection.style.display = 'none';
-            this.progressBar.set(0);
-            
-            const formData = new FormData();
-            formData.append('file', this.fileInput.files[0]);
-            formData.append('target_address', this.targetAddressInput.value);
-            
-            const response = await fetch('/api/calculate', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || '计算失败');
-            }
-            
-            // 计算成功，显示下载按钮
-            this.progressBar.animate(1.0);
-            this.resultSection.style.display = 'block';
-            this.downloadBtn.setAttribute('data-filename', data.filename);
-            
-            // 显示成功提示
-            this.showMessage('计算完成！', 'success');
-            
-        } catch (error) {
-            this.showMessage(error.message, 'error');
-            this.progressSection.style.display = 'none';
-        } finally {
-            this.calculateBtn.disabled = false;
-        }
     }
     
     async downloadResult() {

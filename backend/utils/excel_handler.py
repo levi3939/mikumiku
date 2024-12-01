@@ -5,6 +5,7 @@ from datetime import datetime
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import UPLOAD_FOLDER
+import io
 
 class ExcelHandler:
     def __init__(self):
@@ -112,3 +113,18 @@ class ExcelHandler:
         获取需要处理的总行数（不包含表头）
         """
         return len(df) 
+        
+    def create_result_file_in_memory(self, df, results, output):
+        """在内存中创建结果文件"""
+        # 创建结果DataFrame
+        result_df = df.copy()
+        
+        # 添加计算结果列
+        result_df['经度'] = [r['start_location']['lng'] for r in results]
+        result_df['纬度'] = [r['start_location']['lat'] for r in results]
+        result_df['距离(公里)'] = [r['distance'] for r in results]
+        result_df['通勤时间(分钟)'] = [r['commute_time'] for r in results]
+        result_df['推荐交通方式'] = [r['transport_mode'] for r in results]
+        
+        # 将结果写入内存中的Excel文件
+        result_df.to_excel(output, index=False)
