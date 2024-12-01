@@ -130,12 +130,20 @@ def health_check():
 @app.route('/sample')
 def download_sample():
     """下载示例文件"""
-    sample_file = os.path.join(app.static_folder, 'sample.xlsx')
-    return send_file(
-        sample_file,
-        as_attachment=True,
-        download_name='示例文件.xlsx'
-    )
+    try:
+        # 使用绝对路径定位示例文件
+        sample_file = os.path.join(os.path.dirname(__file__), 'static', '学校地址.xlsx')
+        if not os.path.exists(sample_file):
+            return jsonify({'error': '示例文件不存在'}), 404
+            
+        return send_file(
+            sample_file,
+            as_attachment=True,
+            download_name='学校地址.xlsx'
+        )
+    except Exception as e:
+        logger.error(f"下载示例文件失败: {str(e)}")
+        return jsonify({'error': '下载示例文件失败'}), 500
 
 if __name__ == '__main__':
     socketio.run(app, debug=True) 
